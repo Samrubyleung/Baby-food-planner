@@ -383,20 +383,15 @@ function getMealInfo(age,cat){
   return{meals:'3餐+茶點',portion:'半碗至1碗',texture:'切碎軟塊'};
 }
 
-// ✅ 新邏輯:
-//  - 過敏日 X 佔用當日 + X+1~X+3 為觀察期(期間不排其他新食材)
-//  - X+4 或之後其他食材可正常排
-//  - 再試日 Y (可自選,可能好遠) 只佔用當日 + Y+1~Y+3 觀察期
-//  - Y 之前/之後中間的空檔照樣可以排其他新食材
-//  - 過敏紀錄(foodSchedule + dailyNewFood 標記)保留作日後參考
+
 function regenerateSchedule(){
   foodSchedule = {};
   dailyNewFood = {};
-  const blockedDates = new Set(); // ✅ 局部封鎖的觀察期日子
+  const blockedDates = new Set(); 
   const today = new Date(); today.setHours(0,0,0,0);
   let earliestNewFoodDate = new Date(Math.max(today.getTime(), START.getTime()));
 
-  // helper: 將 dateStr 之後連續 days 日加入 blockedDates (觀察期)
+
   const addObservationBlock = (dateStr, days) => {
     const base = new Date(dateStr + 'T00:00:00');
     for(let i = 1; i <= days; i++){
@@ -428,38 +423,35 @@ function regenerateSchedule(){
       return;
     }
 
-    // ---- 過敏停用 ----
+  
     if(s.status === 'allergic'){
       const allergicDate = s.actualDate 
                         || foodSchedule[f.id] 
                         || formatDate(today);
 
-      // 保留過敏紀錄(供月曆顯示、排程迴避)
+   
       foodSchedule[f.id] = allergicDate;
       dailyNewFood[allergicDate] = { id:f.id, idx, isAllergic:true };
 
-      // ✅ 過敏日後 3 日觀察期(唔排其他新食材)
+    
       addObservationBlock(allergicDate, 3);
 
-      // ✅ earliestNewFoodDate 只推到 過敏日 + 4 日
-      //    即觀察期完就可以繼續排其他食材
+      
       const pauseEnd = new Date(allergicDate + 'T00:00:00');
       pauseEnd.setDate(pauseEnd.getDate() + 4);
       if(pauseEnd > earliestNewFoodDate) earliestNewFoodDate = pauseEnd;
 
-      // ✅ 再試日(可能好遠)只佔用當日 + 3 日觀察期
-      //    不再整體推遲 earliestNewFoodDate
-      //    其他食材可喺再試日之前照排,再試日之後 3 日內唔排
+
 if(s.restartDate){
-  // ✅ 再試也要連續 3 日, 第 1 日 = restartDate
+
   for(let i = 0; i < 3; i++){
     const d = new Date(s.restartDate + 'T00:00:00');
     d.setDate(d.getDate() + i);
     dailyNewFood[formatDate(d)] = { id:f.id, idx, isRestart:true, day: i+1 };
   }
-  // 前 3 日 + 後第 4~6 日(因為 restart 已佔 day1-3)為觀察期
+
   addObservationBlockBoth(s.restartDate, 3);
-  // 額外封鎖 restartDate+4, +5 (避免下一隻太貼)
+
   const r = new Date(s.restartDate + 'T00:00:00');
   for(let i = 3; i <= 5; i++){
     const d = new Date(r); d.setDate(d.getDate()+i);
@@ -470,16 +462,14 @@ if(s.restartDate){
     }
   });
 
-  // ---- 未試食材依序排程,自動跳過:
-  //      紅色假期、已佔用日(dailyNewFood)、觀察期(blockedDates) ----
+
   let cur = new Date(earliestNewFoodDate);
 cur.setHours(0,0,0,0);
 foodList.forEach((f, idx) => {
   const s = foodStatus[f.id] || {};
   if(s.status === 'completed' || s.status === 'allergic') return;
 
-  // ✅ 搵連續 3 日: Day1 不能紅日/星期日, Day2-3 可以
-  //    三日都不可與已佔用日或觀察期衝突
+
   while(true){
     const d1 = new Date(cur);
     const ds1 = formatDate(d1);
@@ -500,7 +490,7 @@ foodList.forEach((f, idx) => {
   const startDs = formatDate(cur);
   foodSchedule[f.id] = startDs;
 
-  // ✅ 標記連續 3 日 (day 1 / 2 / 3)
+
   for(let i = 0; i < 3; i++){
     const d = new Date(cur);
     d.setDate(d.getDate() + i);
@@ -628,7 +618,7 @@ function renderCalendar(){
   const dayNum = newInfo.day || 1;
   const isFirstDay = dayNum === 1;
 
-  // ✅ 只有 Day 1 先加 new-food class (藍框)
+  
   if(plan.isNew && isFirstDay) cell.classList.add('new-food');
   
   ['grain','veg','fruit','meat'].forEach(cat=>{
@@ -646,21 +636,21 @@ function renderCalendar(){
       const item=document.createElement('div');
       item.className='food-item '+CC[cat];
       
-      // ✅ 只有 Day 1 先加 allergic / restart class (有框有底色)
+    
       if(isAllergicDay && isFirstDay) item.classList.add('allergic');
       if(isRestartDay  && isFirstDay) item.classList.add('restart');
       if(eatenToday) item.classList.add('eaten');
 
       let tags = '';
       if(isAllergicDay){
-        // 過敏當日一定係 Day 1,維持原樣
+        
         tags = '<span class="allergic-tag">過敏</span>';
       }else if(isRestartDay && isFirstDay){
         tags = '<span class="restart-tag">再試</span>';
       }else if(isNew && isFirstDay){
         tags = '<span class="new-tag">新</span>' + (done?'<span class="done-tag">✓</span>':'');
       }else if(isNew && !isFirstDay){
-        // ✅ Day 2/3: 只顯示 Day 標示,無框無"新"tag
+       
         tags = '<span class="day-tag" style="background:#e5e7eb;color:#4b5563;font-size:10px;padding:1px 4px;border-radius:3px;margin-left:4px">Day '+dayNum+'/3</span>'
              + (done?'<span class="done-tag">✓</span>':'');
       }
@@ -712,7 +702,7 @@ function showDayModal(ds){
   const isFirstDay = dayNum === 1;
 
   if(plan.isAllergic){
-    // 過敏紀錄(只會出現喺過敏當日,維持原樣)
+   
     html+='<div style="background:#fee2e2;padding:10px;border-radius:6px;margin-bottom:10px;border-left:4px solid #dc2626">';
     html+='<b>🔴 過敏記錄: '+plan.isNew.name+' ('+CN[plan.isNew.cat]+')</b><br>';
     html+='<div style="margin-top:6px;font-size:13px;color:#991b1b">此食材於本日出現過敏反應，已停用。之後 3 日只安排安全食材。</div>';
@@ -722,7 +712,7 @@ function showDayModal(ds){
   }
   else if(plan.isRestart){
     if(isFirstDay){
-      // ✅ 再試 Day 1: 黃框 + "再試" tag
+ 
       html+='<div style="background:#fef3c7;padding:10px;border-radius:6px;margin-bottom:10px;border-left:4px solid #f59e0b">';
       html+='<b>🟡 再試食材: '+plan.isNew.name+' ('+CN[plan.isNew.cat]+') - Day 1/3</b><br>';
       html+='<div style="margin-top:6px;font-size:13px;color:#92400e">此食材曾過敏，安排今日重新嘗試。請小心觀察反應,並連續試食 3 日。</div>';
@@ -731,7 +721,7 @@ function showDayModal(ds){
       html+='</button></div>';
       html+='</div>';
     } else {
-      // ✅ 再試 Day 2/3: 無框,淡色顯示
+   
       html+='<div style="background:#fefce8;padding:8px;border-radius:6px;margin-bottom:10px;font-size:13px;color:#713f12">';
       html+='繼續再試: <b>'+plan.isNew.name+'</b> ('+CN[plan.isNew.cat]+') - Day '+dayNum+'/3';
       html+='</div>';
@@ -739,7 +729,7 @@ function showDayModal(ds){
   }
   else{
     if(isFirstDay){
-      // ✅ 新試敏 Day 1: 藍框 + "新" tag
+  
       html+='<div style="background:#dbeafe;padding:10px;border-radius:6px;margin-bottom:10px;border-left:4px solid #3b82f6">';
       html+='<b>🆕 今日新試敏: '+plan.isNew.name+' ('+CN[plan.isNew.cat]+') - Day 1/3</b><br>';
       html+='<div style="margin-top:6px;font-size:13px;color:#1e40af">請連續試食此食材 3 日以觀察反應。</div>';
@@ -749,7 +739,7 @@ function showDayModal(ds){
       html+='<div style="margin-top:5px;font-size:12px;color:#666">未記錄成功試食的新食材，系統會自動順延至今天之後</div>';
       html+='</div>';
     } else {
-      // ✅ 新試敏 Day 2/3: 無框,淡色顯示
+     
       html+='<div style="background:#eff6ff;padding:8px;border-radius:6px;margin-bottom:10px;font-size:13px;color:#1e3a8a">';
       html+='繼續試食: <b>'+plan.isNew.name+'</b> ('+CN[plan.isNew.cat]+') - Day '+dayNum+'/3';
       html+='</div>';
@@ -957,7 +947,7 @@ foodList.forEach((f,i)=>{
 }
 
 
-// ✅ Bug 2 修正: status 改做 allergic 時自動填實際試食日
+
 function updT(id, field, val){
 if(!foodStatus[id]) foodStatus[id]={status:'pending',actualDate:'',reaction:'',note:''};
 const st = foodStatus[id];
@@ -975,17 +965,17 @@ preserveAllergyHistory(st);
 
 st[field] = val;
 
-// ✅ Bug 2 核心: 狀態改為過敏停用，自動填實際試食日
+
 if(field==='status' && val==='allergic'){
 if(!st.actualDate){
-// 優先用原本計劃嗰日；如果無就用今日
+
 const planned = foodSchedule[id];
 const todayStr = formatDate(new Date());
 st.actualDate = planned || todayStr;
 }
 }
 
-// ✅ 狀態改為已完成，如果未填實際試食日，自動填
+
 if(field==='status' && val==='completed'){
 st.restartDate = '';
 if(!st.actualDate){
@@ -1132,7 +1122,7 @@ function switchView(e,v){
   if(v==='settings') loadSettingsUI();
 }
 
-// ✅ Bug 1 修正: exportToExcel 匯出全部設定（寶寶設定、每日替換、實際進食）
+
 function exportToExcel(){
   const wb=XLSX.utils.book_new();
   const wd=['日','一','二','三','四','五','六'];
@@ -1187,7 +1177,7 @@ function exportToExcel(){
   ws2['!cols']=[{wch:6},{wch:18},{wch:14},{wch:12},{wch:12},{wch:10},{wch:12},{wch:20},{wch:25},{wch:30}];
   XLSX.utils.book_append_sheet(wb,ws2,'試敏記錄表');
   
-  // ✅ Sheet 3: 系統設定（寶寶資料）
+  // Sheet 3: 系統設定（寶寶資料）
   const settingsData = [
     ['項目','值','說明'],
     ['寶寶名字', babySettings.name||'', '顯示於標題'],
@@ -1198,7 +1188,7 @@ function exportToExcel(){
   wsSet['!cols'] = [{wch:20},{wch:20},{wch:25}];
   XLSX.utils.book_append_sheet(wb, wsSet, '系統設定');
   
-  // ✅ Sheet 4: 每日食材替換
+  // Sheet 4: 每日食材替換
   const overrideData = [['日期','類別','食材ID','食材名稱']];
   Object.keys(dailyOverride).sort().forEach(key=>{
     const parts = key.split('_');
@@ -1212,7 +1202,7 @@ function exportToExcel(){
   wsOv['!cols'] = [{wch:12},{wch:10},{wch:8},{wch:18}];
   XLSX.utils.book_append_sheet(wb, wsOv, '每日替換');
   
-  // ✅ Sheet 5: 實際進食勾選
+  //  Sheet 5: 實際進食勾選
   const eatenData = [['日期','穀物','瓜菜','水果','肉類/蛋白質']];
   Object.keys(actualEaten).sort().forEach(date=>{
     const e = actualEaten[date]||{};
@@ -1321,7 +1311,7 @@ function exportActualRecord(){
   XLSX.writeFile(wb,(babySettings.name||'寶寶')+'實際進食紀錄.xlsx');
 }
 
-// ✅ Bug 1 修正: handleImport 讀取全部設定
+
 function handleImport(e){
   const file=e.target.files[0];
   if(!file)return;
