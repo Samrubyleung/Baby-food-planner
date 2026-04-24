@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>寶寶食物計劃 (2026-2027)</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft JhengHei","PingFang TC",Arial,sans-serif;background:#fff7f0;padding:10px;color:#333}
+h1{color:#d97706;text-align:center;margin-bottom:8px;font-size:clamp(18px,4vw,26px)}
+.subtitle{text-align:center;color:#666;margin-bottom:15px;font-size:14px}
+.tabs{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:15px}
+.tab{padding:8px 16px;background:#fff;border:2px solid #f59e0b;border-radius:8px;cursor:pointer;font-weight:bold;color:#d97706;font-size:14px}
+.tab.active{background:#f59e0b;color:#fff}
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:15px;align-items:center}
+.btn{padding:8px 14px;background:#10b981;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:13px}
+.btn:hover{background:#059669}
+.btn-orange{background:#f59e0b}.btn-orange:hover{background:#d97706}
+.btn-blue{background:#3b82f6}.btn-blue:hover{background:#2563eb}
+.btn-red{background:#ef4444}.btn-red:hover{background:#dc2626}
+.btn-gray{background:#6b7280}.btn-gray:hover{background:#4b5563}
+.btn-sm{padding:4px 8px;font-size:12px}
+.view{display:none}.view.active{display:block}
+.month-nav{display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+.month-nav select{padding:8px;border-radius:6px;border:2px solid #f59e0b;font-size:15px}
+.calendar{background:#fff;border-radius:12px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow-x:auto}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;min-width:700px}
+.cal-header{background:#f59e0b;color:#fff;padding:8px;text-align:center;font-weight:bold;border-radius:4px}
+.cal-header.sun{background:#dc2626}
+.cal-day{background:#fefce8;border:1px solid #fde68a;border-radius:4px;padding:4px;min-height:140px;font-size:11px;cursor:pointer;position:relative}
+.cal-day:hover{background:#fef3c7}
+.cal-day.holiday{background:#fee2e2;border-color:#fca5a5}
+.cal-day.empty{background:transparent;border:none;cursor:default}
+.cal-day.new-food{background:#dbeafe;border-color:#60a5fa;border-width:2px}
+.cal-day.today{outline:3px solid #10b981}
+.cal-day.past{opacity:.7}
+.day-num{font-weight:bold;font-size:14px;color:#92400e;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center}
+.day-num.holiday{color:#dc2626}
+.food-item{margin:2px 0;padding:2px 4px;border-radius:3px;font-size:10px;line-height:1.35}
+.food-detail{font-size:9px;opacity:.85;display:block;margin-top:1px}
+.cat-grain{background:#fef3c7;color:#92400e}
+.cat-veg{background:#d1fae5;color:#065f46}
+.cat-fruit{background:#fce7f3;color:#9f1239}
+.cat-meat{background:#fed7aa;color:#9a3412}
+.new-tag{background:#2563eb;color:#fff;padding:1px 4px;border-radius:3px;font-size:9px;font-weight:bold;margin-left:2px}
+.done-tag{background:#10b981;color:#fff;padding:1px 4px;border-radius:3px;font-size:9px;font-weight:bold;margin-left:2px}
+.age-info{background:#fef3c7;padding:10px;border-radius:8px;margin-bottom:10px;text-align:center;font-weight:bold;color:#92400e}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+th{background:#f59e0b;color:#fff;padding:10px;text-align:left;font-size:13px}
+td{padding:8px;border-bottom:1px solid #fde68a;font-size:13px;vertical-align:middle}
+tr:hover{background:#fef3c7}
+.inp{width:100%;padding:5px;border:1px solid #ddd;border-radius:4px;font-size:12px}
+.cat-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold}
+.legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0;font-size:12px}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-color{width:16px;height:16px;border-radius:3px;border:1px solid #999}
+.stats{background:#fff;padding:10px;border-radius:8px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:15px;justify-content:space-around}
+.stat-box{text-align:center}
+.stat-num{font-size:22px;font-weight:bold;color:#d97706}
+.stat-label{font-size:12px;color:#666}
+.modal-bg{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;padding:10px}
+.modal-bg.show{display:flex}
+.modal{background:#fff;padding:20px;border-radius:12px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto}
+.modal h3{color:#d97706;margin-bottom:10px}
+.modal-close{float:right;cursor:pointer;font-size:24px;color:#999;line-height:1}
+.food-row{display:flex;align-items:center;gap:5px;padding:8px;background:#fefce8;border:1px solid #fde68a;border-radius:6px;margin-bottom:5px;flex-wrap:wrap}
+.food-row input,.food-row select{padding:5px;font-size:13px;border:1px solid #ddd;border-radius:4px}
+.food-row .name-inp{flex:1;min-width:120px}
+.food-row .idx{font-weight:bold;color:#92400e;min-width:30px}
+.filter-btn{padding:6px 12px;background:#fff;border:2px solid #f59e0b;border-radius:6px;cursor:pointer;font-size:13px;color:#d97706}
+.filter-btn.active{background:#f59e0b;color:#fff}
+.add-form{background:#fff;padding:15px;border-radius:8px;margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.warn-box{background:#fef3c7;border-left:4px solid #f59e0b;padding:10px;border-radius:6px;margin-bottom:10px;font-size:13px;color:#92400e}
+.status-completed{background:#d1fae5!important;border-color:#10b981!important}
+.status-allergic{background:#fecaca!important;border-color:#ef4444!important}
+.allergic-tag{background:#dc2626;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px;margin-left:4px;font-weight:bold}
+.restart-tag{background:#f59e0b;color:#fff;padding:1px 6px;border-radius:8px;font-size:10px;margin-left:4px;font-weight:bold}
+.food-item.allergic{background:#fee2e2 !important;border-left:3px solid #dc2626}
+.food-item.restart{background:#fef3c7 !important;border-left:3px solid #f59e0b}
+.food-item.eaten{opacity:0.92;box-shadow:inset 3px 0 0 #059669}
+.eaten-tag{background:#059669;color:#fff;padding:0 5px;border-radius:8px;font-size:9px;margin-left:3px;font-weight:bold}
+.history-allergy{font-size:10px;color:#dc2626;background:#fee2e2;padding:2px 5px;border-radius:3px;margin-top:3px;border-left:2px solid #dc2626}
+.eaten-check-row{display:flex;align-items:center;gap:8px;padding:6px 10px;margin:4px 0;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:13px}
+.eaten-check-row input[type=checkbox]{width:18px;height:18px;cursor:pointer}
+.allergy-history-cell{font-size:10px;color:#dc2626;background:#fee2e2;padding:2px 6px;border-radius:4px;margin-top:2px;display:inline-block}
+@media (max-width:600px){
+.cal-day{min-height:110px;font-size:10px}
+.day-num{font-size:12px}
+.food-item{font-size:9px}
+th,td{padding:6px;font-size:12px}
+}
+@media print{
+  @page{ size:A4 landscape; margin:6mm; }
+  body{ padding:0; margin:0; background:#fff; font-size:9px }
+  h1{ font-size:14px !important; margin:2px 0 !important }
+  .subtitle{ font-size:10px; margin-bottom:4px }
+  .tabs,.controls,.month-nav,.age-info,.legend,#dayModal,.tracking-filter,.add-form,.warn-box,.stats,.food-row button,.food-row select{ display:none !important }
+  .view{ display:none !important }
+  .view.active{ display:block !important }
+  .cal-grid{ min-width:0 !important; gap:1px !important }
+  .cal-day{ min-height:72px !important; font-size:7px !important; padding:2px !important; page-break-inside:avoid }
+  .day-num{ font-size:9px !important; margin-bottom:1px !important }
+  .food-item{ font-size:7px !important; padding:1px 2px !important; margin:1px 0 !important }
+  .food-detail{ font-size:6px !important }
+  .cal-header{ padding:3px !important; font-size:10px !important }
+  .calendar{ box-shadow:none; padding:0 }
+  table{ font-size:10px }
+  th,td{ padding:3px !important; font-size:9px !important }
+}
+</style>
+</head>
+<body>
+
+<h1>🍼 寶寶食物計劃表 🥕</h1>
+<div class="subtitle">動態智能排程 | 根據衞生署指引編排</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchView(event,'calendar')">📅 月曆</div>
+  <div class="tab" onclick="switchView(event,'tracking')">✅ 試敏記錄</div>
+  <div class="tab" onclick="switchView(event,'manage')">🥗 食材管理</div>
+  <div class="tab" onclick="switchView(event,'guide')">📖 指引</div>
+  <div class="tab" onclick="switchView(event,'settings')">⚙️ 設定</div>
+</div>
+
+<div class="controls">
+  <button class="btn btn-orange" onclick="exportToExcel()">📥 匯出 Excel</button>
+  <button class="btn btn-blue" onclick="document.getElementById('importFile').click()">📤 匯入 Excel</button>
+  <button class="btn btn-blue" onclick="exportActualRecord()">📊 匯出實際進食</button>
+  <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="handleImport(event)">
+  <button class="btn btn-gray" onclick="regenerateAll();alert('計劃已重新計算！')">🔄 重算計劃</button>
+  <button class="btn" onclick="showPrintOptions()">🖨️ 列印</button>
+</div>
+<div id="backupStatus" style="font-size:12px;margin-top:4px;color:#6b7280;"></div>
+<div id="calendar-view" class="view active">
+  <div class="month-nav">
+    <button class="btn" onclick="changeMonth(-1)">◀ 上月</button>
+    <select id="month-select" onchange="renderCalendar()"></select>
+    <button class="btn" onclick="changeMonth(1)">下月 ▶</button>
+  </div>
+  <div class="age-info" id="age-info"></div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-color" style="background:#fef3c7"></div>穀物</div>
+    <div class="legend-item"><div class="legend-color" style="background:#d1fae5"></div>瓜菜</div>
+    <div class="legend-item"><div class="legend-color" style="background:#fce7f3"></div>水果</div>
+    <div class="legend-item"><div class="legend-color" style="background:#fed7aa"></div>肉類/蛋白質</div>
+    <div class="legend-item"><div class="legend-color" style="background:#fee2e2"></div>紅色假期</div>
+    <div class="legend-item"><div class="legend-color" style="background:#dbeafe;border-color:#60a5fa"></div>🆕 新試敏</div>
+    <div class="legend-item"><div class="legend-color" style="background:#fff;outline:2px solid #10b981"></div>今天</div>
+  </div>
+  <div style="text-align:center;font-size:12px;color:#666;margin-bottom:8px">💡 點擊日期可查看詳細資訊及記錄實際進食</div>
+  <div class="calendar"><div class="cal-grid" id="cal-grid"></div></div>
+</div>
+
+<div id="tracking-view" class="view">
+  <div class="stats" id="stats"></div>
+  <div class="tracking-filter" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <button class="filter-btn active" onclick="filterTracking(event,'all')">全部</button>
+    <button class="filter-btn" onclick="filterTracking(event,'grain')">穀物</button>
+    <button class="filter-btn" onclick="filterTracking(event,'veg')">瓜菜</button>
+    <button class="filter-btn" onclick="filterTracking(event,'fruit')">水果</button>
+    <button class="filter-btn" onclick="filterTracking(event,'meat')">肉類/蛋白質</button>
+  </div>
+  <div style="overflow-x:auto">
+    <table id="tracking-table">
+      <thead><tr><th>#</th><th>食材</th><th>類別</th><th>計劃試食日</th><th>實際試食日</th><th>狀態</th><th>再試日</th><th>過敏反應</th><th>備註</th></tr></thead>
+      <tbody id="tracking-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="manage-view" class="view">
+  <div class="warn-box">⚠️ 變更食材後計劃將自動重新排程。「實際試食日」已填寫的食材會鎖定原日期；「狀態=過敏停用」的食材會被跳過；其餘未完成食材會從今天開始順序排程，若超過1年會自動延期。</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+  <button class="filter-btn active" onclick="setManageFilter(event,'all')">全部</button>
+  <button class="filter-btn" onclick="setManageFilter(event,'grain')">穀物</button>
+  <button class="filter-btn" onclick="setManageFilter(event,'veg')">瓜菜</button>
+  <button class="filter-btn" onclick="setManageFilter(event,'fruit')">水果</button>
+  <button class="filter-btn" onclick="setManageFilter(event,'meat')">肉類/蛋白質</button>
+</div>
+  <div class="add-form">
+    <input type="text" id="new-food-name" class="inp" style="flex:1;min-width:120px" placeholder="新食材名稱">
+    <select id="new-food-cat" style="padding:5px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+      <option value="grain">穀物</option><option value="veg">瓜菜</option><option value="fruit">水果</option><option value="meat">肉類/蛋白質</option>
+    </select>
+    <button class="btn" onclick="addFood()">➕ 新增至結尾</button>
+    <button class="btn btn-red btn-sm" onclick="if(confirm('確定重設所有食材至預設？將清除所有記錄')) resetDefault()">重設預設</button>
+  </div>
+  <div id="food-manage-list"></div>
+</div>
+
+<div id="settings-view" class="view">
+  <div style="background:#fff;padding:20px;border-radius:12px;max-width:500px;margin:0 auto">
+    <h3 style="color:#d97706;margin-bottom:15px">⚙️ 基本資料</h3>
+    <div style="margin-bottom:12px">
+      <label style="display:block;margin-bottom:4px;font-weight:bold">寶寶名字</label>
+      <input type="text" id="set-name" class="inp" style="max-width:250px">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="display:block;margin-bottom:4px;font-weight:bold">出生日期（自動計算月齡）</label>
+      <input type="date" id="set-birth" class="inp" style="max-width:250px" oninput="updateAgeDisplay()">
+      <div id="age-display" style="margin-top:4px;color:#d97706;font-size:13px;font-weight:bold"></div>
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="display:block;margin-bottom:4px;font-weight:bold">試敏開始日期</label>
+      <input type="date" id="set-start" class="inp" style="max-width:250px">
+    </div>
+    <button class="btn" onclick="saveSettings()">💾 儲存設定</button>
+    <div style="margin-top:15px;padding:10px;background:#fef3c7;border-radius:6px;font-size:12px;color:#92400e">
+      💡 設定儲存後系統會自動重新排程
+    </div>
+  </div>
+</div>
+  
+<div id="guide-view" class="view">
+  <div style="background:#fff;padding:20px;border-radius:12px;line-height:1.8">
+    <h2 style="color:#d97706">📌 試敏原則</h2>
+    <ul style="margin-left:20px">
+      <li>每種新食物連續試 <b>2-4 天</b> (本系統預設 3 天)</li>
+      <li>避免晚上及紅色假期引進新食物 (系統已自動避開)</li>
+      <li>留意過敏反應：紅疹、肚瀉、嘔吐、呼吸困難</li>
+      <li>如出現過敏 → 在「試敏記錄」將該食材狀態設為「過敏停用」，系統會自動跳過並重排後續</li>
+      <li>一歲以下避免：鹽、豉油、調味料、未煮熟食物、蜜糖</li>
+    </ul>
+    <h2 style="color:#d97706;margin-top:20px">🍼 月齡飲食建議</h2>
+    <table style="margin-top:10px">
+      <thead><tr><th>月齡</th><th>奶量</th><th>固體食物</th><th>餐數/份量/質地</th></tr></thead>
+      <tbody>
+        <tr><td>5.5-6個月</td><td>4-6餐, 每餐150-210ml</td><td>米糊+瓜菜蓉+水果蓉</td><td>1餐 · 1-2茶匙起 · 稀糊</td></tr>
+        <tr><td>6-7個月</td><td>4-5餐, 每餐150-210ml</td><td>加入更多蔬果</td><td>2餐 · 2-4茶匙 · 稀糊</td></tr>
+        <tr><td>7-8個月</td><td>3-4餐, 每餐210-240ml</td><td>加入肉糊/蛋黃</td><td>2-3餐 · 2-3湯匙 · 稠糊/粥</td></tr>
+        <tr><td>9-11個月</td><td>2-3餐, 每餐210-240ml</td><td>粥或軟飯, 碎菜瓜粒</td><td>3餐 · 3-4湯匙 · 軟粥/碎粒</td></tr>
+        <tr><td>12-24個月</td><td>360-480ml/日</td><td>3正餐+2茶點</td><td>3餐+茶點 · 半碗至1碗 · 切碎軟塊</td></tr>
+      </tbody>
+    </table>
+    <h2 style="color:#d97706;margin-top:20px">🔄 系統使用流程</h2>
+    <ol style="margin-left:20px">
+      <li><b>月曆</b>：查看每日食物安排 (含餐數/份量/質地)，系統設計是以每天每種類只安排一款食物為前提下設計，如計劃進食多於一款食物，需另作紀錄</li>
+      <li>點擊日期 → 記錄「今天成功試食」→ 鎖定實際試食日</li>
+      <li><b>試敏記錄</b>：直接編輯實際試食日、過敏反應、狀態</li>
+      <li><b>食材管理</b>：增減/重排食材，系統自動重算計劃</li>
+      <li><b>Excel 匯入/匯出</b>：雙向同步，可離線編輯後匯入</li>
+      <li><b>Data備份</b>這系統並無連接雲端服務，紀錄只會保留在本地Browser上，切換Browser、清除Cookies & Cache、使用無痕模式或切換裝置後紀錄不能同步，請自行匯出Excel備份，匯入Excel可以取回紀錄</li>
+    </ol>
+    <h2 style="color:#d97706;margin-top:20px">⚠️ 需注意食物</h2>
+    <ul style="margin-left:20px">
+      <li><b>蛋白</b>：需謹慎引進，通常8個月後</li>
+      <li><b>堅果</b>：必須磨粉或少量塗抹</li>
+      <li><b>鮮奶</b>：一歲後才可作主要奶類</li>
+      <li><b>避免哽噎</b>：硬而細小食物、啫喱、湯圓、未去骨肉魚</li>
+    </ul>
+  </div>
+</div>
+
+<div id="dayModal" class="modal-bg" onclick="if(event.target===this) closeModal()">
+  <div class="modal"><span class="modal-close" onclick="closeModal()">×</span><div id="dayModalContent"></div></div>
+</div>
+
+<script>
+const HOLIDAY_DATA = {
+  '2025-01-01':'元旦','2025-01-29':'農曆年初一','2025-01-30':'農曆年初二','2025-01-31':'農曆年初三',
+  '2025-04-04':'清明節','2025-04-18':'耶穌受難節','2025-04-19':'耶穌受難節翌日','2025-04-21':'復活節星期一',
+  '2025-05-01':'勞動節','2025-05-05':'佛誕','2025-05-31':'端午節',
+  '2025-07-01':'香港特別行政區成立紀念日','2025-10-01':'國慶日','2025-10-07':'中秋節翌日',
+  '2025-10-29':'重陽節','2025-12-25':'聖誕節','2025-12-26':'聖誕節後第一個周日',
+  '2026-01-01':'元旦','2026-02-17':'農曆年初一','2026-02-18':'農曆年初二','2026-02-19':'農曆年初三',
+  '2026-04-03':'耶穌受難節','2026-04-04':'耶穌受難節翌日','2026-04-06':'復活節星期一/清明節',
+  '2026-05-01':'勞動節','2026-05-25':'佛誕','2026-06-19':'端午節',
+  '2026-07-01':'香港特別行政區成立紀念日','2026-09-26':'中秋節翌日','2026-10-01':'國慶日',
+  '2026-10-19':'重陽節','2026-12-25':'聖誕節','2026-12-26':'聖誕節後第一個周日',
+  '2027-01-01':'元旦','2027-02-06':'農曆年初一','2027-02-08':'農曆年初二','2027-02-09':'農曆年初三',
+  '2027-03-26':'耶穌受難節','2027-03-27':'耶穌受難節翌日','2027-03-29':'復活節星期一',
+  '2027-04-05':'清明節','2027-05-01':'勞動節','2027-05-13':'佛誕','2027-06-09':'端午節',
+  '2027-07-01':'香港特別行政區成立紀念日','2027-09-16':'中秋節翌日','2027-10-01':'國慶日',
+  '2027-10-08':'重陽節','2027-12-25':'聖誕節','2027-12-27':'聖誕節後第一個周日'
+};
+
+const HN = {...HOLIDAY_DATA};
+(function addSundays(){
+  const s = new Date('2025-01-01');
+  const e = new Date('2027-12-31');
+  for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){
+    if(d.getDay()===0){
+      const ds = d.toISOString().slice(0,10);
+      if(!HN[ds]) HN[ds] = '星期日';
+    }
+  }
+})();
+
+const RED = new Set(Object.keys(HN));
+const CN={grain:'穀物類',veg:'瓜菜類',fruit:'水果類',meat:'肉類/蛋白質'};
+const CC={grain:'cat-grain',veg:'cat-veg',fruit:'cat-fruit',meat:'cat-meat'};
+let START=new Date('2026-05-01');
+let BIRTH_AGE=5.5;
+const TEST_DAYS=3;
+
+let dailyOverride = {};
+let babySettings  = { name:'寶寶', birthDate:'', startDate:'2026-05-01' };
+let currentView   = 'calendar';
+let manageFilter  = 'all';
+const STORAGE_KEY = 'babyFoodPlan_v2';
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      foodList, foodStatus, nextId, dailyOverride, babySettings, actualEaten
+    }));
+  }catch(e){}
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(d.foodList)      foodList      = d.foodList;
+    if(d.foodStatus)    foodStatus    = d.foodStatus;
+    if(d.nextId)        nextId        = d.nextId;
+    if(d.dailyOverride) dailyOverride = d.dailyOverride;
+    if(d.babySettings)  Object.assign(babySettings, d.babySettings);
+    if(d.actualEaten)   actualEaten   = d.actualEaten;
+    START = new Date(babySettings.startDate + 'T00:00:00');
+    return true;
+  }catch(e){ return false; }
+}
+
+function preserveAllergyHistory(st){
+  if(!st) return;
+  if(st.status !== 'allergic') return;
+  if(!st.actualDate) return;
+  if(!st.allergyHistory) st.allergyHistory = [];
+  const exists = st.allergyHistory.some(h => h.date === st.actualDate);
+  if(!exists){
+    st.allergyHistory.push({
+      date: st.actualDate,
+      reaction: st.reaction || '',
+      restartDate: st.restartDate || ''
+    });
+  }
+}
+
+const DEFAULT_FOODS=[
+['強化鐵米粉','grain'],['紅蘿蔔','veg'],['蘋果','fruit'],['南瓜','veg'],['梨','fruit'],['菠菜','veg'],['香蕉','fruit'],['白米糊','grain'],['節瓜','veg'],['牛油果','fruit'],['番薯','grain'],['西蘭花','veg'],['木瓜','fruit'],['燕麥','grain'],['菜心','veg'],['雞肉','meat'],['冬瓜','veg'],['藍莓','fruit'],['馬鈴薯','grain'],['豬肉','meat'],['小白菜','veg'],['哈密瓜','fruit'],['蛋黃','meat'],['西芹','veg'],['桃','fruit'],['糙米','grain'],['三文魚','meat'],['椰菜花','veg'],['蜜瓜','fruit'],['豆苗','veg'],['牛肉','meat'],['白蘿蔔','veg'],['橙','fruit'],['麥皮','grain'],['豆腐','meat'],['茄子','veg'],['西瓜','fruit'],['鱈魚','meat'],['油麥菜','veg'],['火龍果','fruit'],['小米','grain'],['蘆筍','veg'],['葡萄(無籽)','fruit'],['龍脷柳','meat'],['蕃茄','veg'],['奇異果','fruit'],['紅豆','meat'],['粟米','grain'],['莧菜','veg'],['芒果','fruit'],['鯇魚','meat'],['四季豆','veg'],['草莓','fruit'],['藜麥','grain'],['綠豆','meat'],['荷蘭豆','veg'],['櫻桃','fruit'],['意粉','grain'],['乳酪(無糖)','meat'],['青瓜','veg'],['李子','fruit'],['芋頭','grain'],['黃豆','meat'],['西生菜','veg'],['杏','fruit'],['麵條','grain'],['鵪鶉肉','meat'],['粟米芯','veg'],['紅桑子','fruit'],['麵包','grain'],['芝士','meat'],['洋蔥(煮熟)','veg'],['黃梨','fruit'],['吞拿魚','meat'],['冬菇','veg'],['菠蘿','fruit'],['黑豆','meat'],['草菇','veg'],['蓮霧','fruit'],['蛋白(謹慎)','meat'],['木耳','veg'],['釋迦','fruit'],['肝臟','meat'],['大豆芽','veg'],['柚子','fruit'],['芝麻','meat'],['花椰菜','veg'],['檸檬(少量)','fruit'],['亞麻籽','meat'],['露筍','veg'],['核桃(磨粉)','meat'],['花生醬(少量)','meat'],['腰果(磨粉)','meat']
+];
+
+let nextId=1;
+let foodList=[];
+let foodStatus={};
+let foodSchedule={};
+let dailyNewFood={};
+let actualEaten = {};
+let trackingFilter='all';
+
+function resetDefault(){
+  foodList=DEFAULT_FOODS.map(([n,c])=>({id:nextId++,name:n,cat:c}));
+  foodStatus={};
+  actualEaten={};
+  dailyOverride={};
+  foodList.forEach(f=>foodStatus[f.id]={status:'pending',actualDate:'',reaction:'',note:''});
+  regenerateAll();
+}
+
+function formatDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function getBabyAgeMonths(d){
+  if(babySettings.birthDate){
+    const birth=new Date(babySettings.birthDate+'T00:00:00');
+    return (d-birth)/(86400000*30.4375);
+  }
+  return BIRTH_AGE + Math.floor((d-START)/86400000)/30;
+}
+
+function getMealInfo(age,cat){
+  if(age<6)return{meals:'1餐',portion:'1-2茶匙',texture:'稀糊'};
+  if(age<7)return{meals:'2餐',portion:'2-4茶匙',texture:'稀糊'};
+  if(age<9){
+    if(cat==='meat')return{meals:'1-2餐',portion:'1-2茶匙',texture:'稠糊'};
+    return{meals:'2-3餐',portion:'2-3湯匙',texture:'稠糊/粥'};
+  }
+  if(age<12){
+    if(cat==='meat')return{meals:'2-3餐',portion:'2-3湯匙',texture:'碎粒'};
+    return{meals:'3餐',portion:'3-4湯匙',texture:'軟粥/碎粒'};
+  }
+  if(cat==='meat')return{meals:'2-3餐',portion:'3-4湯匙',texture:'切碎軟塊'};
+  return{meals:'3餐+茶點',portion:'半碗至1碗',texture:'切碎軟塊'};
+}
+
+// ✅ 新邏輯:
+//  - 過敏日 X 佔用當日 + X+1~X+3 為觀察期(期間不排其他新食材)
+//  - X+4 或之後其他食材可正常排
+//  - 再試日 Y (可自選,可能好遠) 只佔用當日 + Y+1~Y+3 觀察期
+//  - Y 之前/之後中間的空檔照樣可以排其他新食材
+//  - 過敏紀錄(foodSchedule + dailyNewFood 標記)保留作日後參考
+function regenerateSchedule(){
+  foodSchedule = {};
+  dailyNewFood = {};
+  const blockedDates = new Set(); // ✅ 局部封鎖的觀察期日子
+  const today = new Date(); today.setHours(0,0,0,0);
+  let earliestNewFoodDate = new Date(Math.max(today.getTime(), START.getTime()));
+
+  // helper: 將 dateStr 之後連續 days 日加入 blockedDates (觀察期)
+  const addObservationBlock = (dateStr, days) => {
+    const base = new Date(dateStr + 'T00:00:00');
+    for(let i = 1; i <= days; i++){
+      const d = new Date(base);
+      d.setDate(d.getDate() + i);
+      blockedDates.add(formatDate(d));
+    }
+  };
+
+  const addObservationBlockBoth = (dateStr, days) => {
+  const base = new Date(dateStr + 'T00:00:00');
+  for(let i = 1; i <= days; i++){
+    const after = new Date(base);  after.setDate(after.getDate() + i);
+    const before = new Date(base); before.setDate(before.getDate() - i);
+    blockedDates.add(formatDate(after));
+    blockedDates.add(formatDate(before));
+  }
+};
+  foodList.forEach((f, idx) => {
+    const s = foodStatus[f.id] || {};
+
+    // ---- 已完成 ----
+    if(s.status === 'completed' && s.actualDate){
+      foodSchedule[f.id] = s.actualDate;
+      dailyNewFood[s.actualDate] = { id:f.id, idx };
+      const end = new Date(s.actualDate + 'T00:00:00');
+      end.setDate(end.getDate() + 3);
+      if(end > earliestNewFoodDate) earliestNewFoodDate = end;
+      return;
+    }
+
+    // ---- 過敏停用 ----
+    if(s.status === 'allergic'){
+      const allergicDate = s.actualDate 
+                        || foodSchedule[f.id] 
+                        || formatDate(today);
+
+      // 保留過敏紀錄(供月曆顯示、排程迴避)
+      foodSchedule[f.id] = allergicDate;
+      dailyNewFood[allergicDate] = { id:f.id, idx, isAllergic:true };
+
+      // ✅ 過敏日後 3 日觀察期(唔排其他新食材)
+      addObservationBlock(allergicDate, 3);
+
+      // ✅ earliestNewFoodDate 只推到 過敏日 + 4 日
+      //    即觀察期完就可以繼續排其他食材
+      const pauseEnd = new Date(allergicDate + 'T00:00:00');
+      pauseEnd.setDate(pauseEnd.getDate() + 4);
+      if(pauseEnd > earliestNewFoodDate) earliestNewFoodDate = pauseEnd;
+
+      // ✅ 再試日(可能好遠)只佔用當日 + 3 日觀察期
+      //    不再整體推遲 earliestNewFoodDate
+      //    其他食材可喺再試日之前照排,再試日之後 3 日內唔排
+if(s.restartDate){
+  // ✅ 再試也要連續 3 日, 第 1 日 = restartDate
+  for(let i = 0; i < 3; i++){
+    const d = new Date(s.restartDate + 'T00:00:00');
+    d.setDate(d.getDate() + i);
+    dailyNewFood[formatDate(d)] = { id:f.id, idx, isRestart:true, day: i+1 };
+  }
+  // 前 3 日 + 後第 4~6 日(因為 restart 已佔 day1-3)為觀察期
+  addObservationBlockBoth(s.restartDate, 3);
+  // 額外封鎖 restartDate+4, +5 (避免下一隻太貼)
+  const r = new Date(s.restartDate + 'T00:00:00');
+  for(let i = 3; i <= 5; i++){
+    const d = new Date(r); d.setDate(d.getDate()+i);
+    blockedDates.add(formatDate(d));
+  }
+}
+      return;
+    }
+  });
+
+  // ---- 未試食材依序排程,自動跳過:
+  //      紅色假期、已佔用日(dailyNewFood)、觀察期(blockedDates) ----
+  let cur = new Date(earliestNewFoodDate);
+cur.setHours(0,0,0,0);
+foodList.forEach((f, idx) => {
+  const s = foodStatus[f.id] || {};
+  if(s.status === 'completed' || s.status === 'allergic') return;
+
+  // ✅ 搵連續 3 日: Day1 不能紅日/星期日, Day2-3 可以
+  //    三日都不可與已佔用日或觀察期衝突
+  while(true){
+    const d1 = new Date(cur);
+    const ds1 = formatDate(d1);
+    const d1Red = RED.has(ds1) || d1.getDay() === 0;
+    if(d1Red || dailyNewFood[ds1] || blockedDates.has(ds1)){
+      cur.setDate(cur.getDate()+1); continue;
+    }
+    const d2 = new Date(d1); d2.setDate(d2.getDate()+1);
+    const d3 = new Date(d1); d3.setDate(d3.getDate()+2);
+    const ds2 = formatDate(d2), ds3 = formatDate(d3);
+    if(dailyNewFood[ds2] || blockedDates.has(ds2) ||
+       dailyNewFood[ds3] || blockedDates.has(ds3)){
+      cur.setDate(cur.getDate()+1); continue;
+    }
+    break;
+  }
+
+  const startDs = formatDate(cur);
+  foodSchedule[f.id] = startDs;
+
+  // ✅ 標記連續 3 日 (day 1 / 2 / 3)
+  for(let i = 0; i < 3; i++){
+    const d = new Date(cur);
+    d.setDate(d.getDate() + i);
+    dailyNewFood[formatDate(d)] = { id:f.id, idx, day: i+1 };
+  }
+  cur.setDate(cur.getDate() + 3);
+});
+}
+    
+function getDailyPlan(dateStr){
+  const date=new Date(dateStr);
+  const age=getBabyAgeMonths(date);
+  const introduced=[];
+  foodList.forEach((f,i)=>{
+    if(foodSchedule[f.id]&&foodSchedule[f.id]<=dateStr){
+      const s=foodStatus[f.id]||{};
+      if(s.status==='allergic')return;
+      introduced.push(Object.assign({},f,{idx:i}));
+    }
+  });
+  const byCat={grain:[],veg:[],fruit:[],meat:[]};
+  introduced.forEach(f=>byCat[f.cat].push(f));
+  const seed=Math.floor((date-START)/86400000);
+  const plan={age};
+  const needCats=age<7?['grain','veg','fruit']:['grain','veg','fruit','meat'];
+  needCats.forEach(cat=>{
+    if(byCat[cat].length>0){
+      plan[cat]=byCat[cat][((seed%byCat[cat].length)+byCat[cat].length)%byCat[cat].length];
+    }
+  });
+  ['grain','veg','fruit','meat'].forEach(cat=>{
+    const ovId = dailyOverride[dateStr+'_'+cat];
+    if(ovId){
+      const ovF = foodList.find(x=>x.id===ovId);
+      const ovS = foodStatus[ovId]||{};
+      if(ovF && ovS.status!=='allergic') plan[cat] = ovF;
+    }
+  });
+if(dailyNewFood[dateStr]){
+  const nf=dailyNewFood[dateStr];
+  const f=foodList.find(x=>x.id===nf.id);
+  if(f){
+    plan[f.cat]=f;
+    plan.isNew=f;
+    if(nf.isRestart)  plan.isRestart  = true;
+    if(nf.isAllergic) plan.isAllergic = true;
+  }
+}
+  return plan;
+}
+
+function getMaxDate(){
+  let max=new Date('2027-05-31');
+  Object.values(foodSchedule).forEach(ds=>{
+    const d=new Date(ds);if(d>max)max=d;
+  });
+  max.setMonth(max.getMonth()+1);
+  return max;
+}
+
+const monthSelect=document.getElementById('month-select');
+function rebuildMonthSelect(){
+  const cur=monthSelect.value;
+  monthSelect.innerHTML='';
+  const endD=getMaxDate();
+  let md=new Date(START);
+  while(md<=endD){
+    const v=md.getFullYear()+'-'+String(md.getMonth()+1).padStart(2,'0');
+    const opt=document.createElement('option');
+    opt.value=v;opt.textContent=v.replace('-','年')+'月';
+    monthSelect.appendChild(opt);
+    md.setMonth(md.getMonth()+1);
+  }
+  if(cur&&[...monthSelect.options].some(o=>o.value===cur))monthSelect.value=cur;
+  else{
+    const now=new Date();
+    const nv=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    if([...monthSelect.options].some(o=>o.value===nv))monthSelect.value=nv;
+  }
+}
+
+function changeMonth(d){
+  const i=monthSelect.selectedIndex+d;
+  if(i>=0&&i<monthSelect.options.length){monthSelect.selectedIndex=i;renderCalendar();}
+}
+
+function renderCalendar(){
+  const [y,m]=monthSelect.value.split('-').map(Number);
+  const firstDay=new Date(y,m-1,1);
+  const lastDay=new Date(y,m,0);
+  const startWd=firstDay.getDay();
+  const grid=document.getElementById('cal-grid');
+  grid.innerHTML='';
+  ['日','一','二','三','四','五','六'].forEach((d,i)=>{
+    const h=document.createElement('div');
+    h.className='cal-header'+(i===0?' sun':'');
+    h.textContent=d;grid.appendChild(h);
+  });
+  for(let i=0;i<startWd;i++){
+    const e=document.createElement('div');e.className='cal-day empty';grid.appendChild(e);
+  }
+  const today=new Date();today.setHours(0,0,0,0);
+  const todayStr=formatDate(today);
+  for(let d=1;d<=lastDay.getDate();d++){
+    const dateObj=new Date(y,m-1,d);
+    const ds=formatDate(dateObj);
+    const isHol=RED.has(ds);
+    const cell=document.createElement('div');
+    cell.className='cal-day';
+    if(isHol)cell.classList.add('holiday');
+    if(ds===todayStr)cell.classList.add('today');
+    if(dateObj<today)cell.classList.add('past');
+    cell.onclick=()=>showDayModal(ds);
+    
+    const numDiv=document.createElement('div');
+    numDiv.className='day-num'+(isHol?' holiday':'');
+    let numText=d+(isHol?' 🔴':'');
+    if(isHol&&HN[ds])numText+=' '+HN[ds];
+    numDiv.innerHTML='<span>'+numText+'</span>';
+    cell.appendChild(numDiv);
+    
+ if(dateObj>=START){
+  const plan=getDailyPlan(ds);
+  const newInfo = (dailyNewFood && dailyNewFood[ds]) || {};
+  const dayNum = newInfo.day || 1;
+  const isFirstDay = dayNum === 1;
+
+  // ✅ 只有 Day 1 先加 new-food class (藍框)
+  if(plan.isNew && isFirstDay) cell.classList.add('new-food');
+  
+  ['grain','veg','fruit','meat'].forEach(cat=>{
+    if(plan[cat]){
+      const mi=getMealInfo(plan.age,cat);
+      const isNew=plan.isNew&&plan.isNew.cat===cat;
+      const st=foodStatus[plan[cat].id]||{};
+      const done=st.actualDate===ds;
+
+      const isAllergicDay = isNew && plan.isAllergic;
+      const isRestartDay  = isNew && plan.isRestart;
+
+      const eatenToday = (actualEaten[ds]||{})[cat];
+
+      const item=document.createElement('div');
+      item.className='food-item '+CC[cat];
+      
+      // ✅ 只有 Day 1 先加 allergic / restart class (有框有底色)
+      if(isAllergicDay && isFirstDay) item.classList.add('allergic');
+      if(isRestartDay  && isFirstDay) item.classList.add('restart');
+      if(eatenToday) item.classList.add('eaten');
+
+      let tags = '';
+      if(isAllergicDay){
+        // 過敏當日一定係 Day 1,維持原樣
+        tags = '<span class="allergic-tag">過敏</span>';
+      }else if(isRestartDay && isFirstDay){
+        tags = '<span class="restart-tag">再試</span>';
+      }else if(isNew && isFirstDay){
+        tags = '<span class="new-tag">新</span>' + (done?'<span class="done-tag">✓</span>':'');
+      }else if(isNew && !isFirstDay){
+        // ✅ Day 2/3: 只顯示 Day 標示,無框無"新"tag
+        tags = '<span class="day-tag" style="background:#e5e7eb;color:#4b5563;font-size:10px;padding:1px 4px;border-radius:3px;margin-left:4px">Day '+dayNum+'/3</span>'
+             + (done?'<span class="done-tag">✓</span>':'');
+      }
+      if(eatenToday) tags += '<span class="eaten-tag">✓食</span>';
+
+      item.innerHTML = plan[cat].name + tags +
+        '<span class="food-detail">'+mi.meals+'·'+mi.portion+'·'+mi.texture+'</span>';
+      cell.appendChild(item);
+    }
+  });
+      
+      const historicAllergies = foodList.filter(f=>{
+        const fst = foodStatus[f.id]||{};
+        return fst.allergyHistory && fst.allergyHistory.some(h=>h.date===ds);
+      });
+      historicAllergies.forEach(f=>{
+        const histDiv = document.createElement('div');
+        histDiv.className = 'history-allergy';
+        histDiv.innerHTML = '📛 '+f.name+' 曾過敏';
+        cell.appendChild(histDiv);
+      });
+    }
+    grid.appendChild(cell);
+  }
+  const midDate=new Date(y,m-1,15);
+  const age=getBabyAgeMonths(midDate);
+  let stage='';
+  if(age<7)stage='5.5-6個月階段: 米糊、瓜菜蓉、水果蓉';
+  else if(age<9)stage='7-8個月階段: 加入肉糊/蛋黃, 稀糊轉稠糊/粥';
+  else if(age<12)stage='9-11個月階段: 粥或軟飯, 碎菜瓜粒, 碎肉';
+  else stage='12個月後: 3正餐+2茶點, 切碎家常餸';
+  document.getElementById('age-info').textContent='👶 寶寶約 '+age.toFixed(1)+' 個月大 | '+stage;
+}
+
+function showDayModal(ds){
+  const date=new Date(ds);
+  if(date<START)return;
+  const plan=getDailyPlan(ds);
+  const isHol=RED.has(ds);
+  let html='<h3>'+ds+' ('+['日','一','二','三','四','五','六'][date.getDay()]+')</h3>';
+  html+='<p style="color:#666;margin-bottom:10px">寶寶約 '+plan.age.toFixed(1)+' 個月</p>';
+  if(isHol)html+='<div class="warn-box">🔴 紅色假期: '+(HN[ds]||'')+' (不宜引進新食物)</div>';
+  
+  if(plan.isNew){
+  const st=foodStatus[plan.isNew.id]||{};
+  const done=st.actualDate===ds;
+  const info = dailyNewFood[ds] || {};
+  const dayNum = info.day || 1;
+  const isFirstDay = dayNum === 1;
+
+  if(plan.isAllergic){
+    // 過敏紀錄(只會出現喺過敏當日,維持原樣)
+    html+='<div style="background:#fee2e2;padding:10px;border-radius:6px;margin-bottom:10px;border-left:4px solid #dc2626">';
+    html+='<b>🔴 過敏記錄: '+plan.isNew.name+' ('+CN[plan.isNew.cat]+')</b><br>';
+    html+='<div style="margin-top:6px;font-size:13px;color:#991b1b">此食材於本日出現過敏反應，已停用。之後 3 日只安排安全食材。</div>';
+    if(st.restartDate) html+='<div style="margin-top:4px;font-size:12px;color:#666">📅 再試日: '+st.restartDate+'</div>';
+    if(st.reaction)    html+='<div style="margin-top:4px;font-size:12px;color:#666">⚠️ 過敏反應: '+st.reaction+'</div>';
+    html+='</div>';
+  }
+  else if(plan.isRestart){
+    if(isFirstDay){
+      // ✅ 再試 Day 1: 黃框 + "再試" tag
+      html+='<div style="background:#fef3c7;padding:10px;border-radius:6px;margin-bottom:10px;border-left:4px solid #f59e0b">';
+      html+='<b>🟡 再試食材: '+plan.isNew.name+' ('+CN[plan.isNew.cat]+') - Day 1/3</b><br>';
+      html+='<div style="margin-top:6px;font-size:13px;color:#92400e">此食材曾過敏，安排今日重新嘗試。請小心觀察反應,並連續試食 3 日。</div>';
+      html+='<div style="margin-top:8px"><button class="btn" onclick="markRestartSuccess(\''+plan.isNew.id+'\',\''+ds+'\')">';
+      html+='✓ 再試成功，轉為已完成';
+      html+='</button></div>';
+      html+='</div>';
+    } else {
+      // ✅ 再試 Day 2/3: 無框,淡色顯示
+      html+='<div style="background:#fefce8;padding:8px;border-radius:6px;margin-bottom:10px;font-size:13px;color:#713f12">';
+      html+='繼續再試: <b>'+plan.isNew.name+'</b> ('+CN[plan.isNew.cat]+') - Day '+dayNum+'/3';
+      html+='</div>';
+    }
+  }
+  else{
+    if(isFirstDay){
+      // ✅ 新試敏 Day 1: 藍框 + "新" tag
+      html+='<div style="background:#dbeafe;padding:10px;border-radius:6px;margin-bottom:10px;border-left:4px solid #3b82f6">';
+      html+='<b>🆕 今日新試敏: '+plan.isNew.name+' ('+CN[plan.isNew.cat]+') - Day 1/3</b><br>';
+      html+='<div style="margin-top:6px;font-size:13px;color:#1e40af">請連續試食此食材 3 日以觀察反應。</div>';
+      html+='<div style="margin-top:8px"><button class="btn '+(done?'btn-gray':'')+'" onclick="markNewFood(\''+plan.isNew.id+'\',\''+ds+'\','+(!done)+')">';
+      html+=done?'✓ 已記錄成功試食 (點擊取消)':'✓ 記錄今日成功試食';
+      html+='</button></div>';
+      html+='<div style="margin-top:5px;font-size:12px;color:#666">未記錄成功試食的新食材，系統會自動順延至今天之後</div>';
+      html+='</div>';
+    } else {
+      // ✅ 新試敏 Day 2/3: 無框,淡色顯示
+      html+='<div style="background:#eff6ff;padding:8px;border-radius:6px;margin-bottom:10px;font-size:13px;color:#1e3a8a">';
+      html+='繼續試食: <b>'+plan.isNew.name+'</b> ('+CN[plan.isNew.cat]+') - Day '+dayNum+'/3';
+      html+='</div>';
+    }
+  }
+}
+  
+  html+='<h4 style="color:#d97706;margin:10px 0">📋 當日食材安排</h4>';
+  ['grain','veg','fruit','meat'].forEach(cat=>{
+    if(plan[cat]){
+      const mi=getMealInfo(plan.age,cat);
+      const isNewCat=plan.isNew&&plan.isNew.cat===cat;
+      const isAllergicHere = isNewCat && plan.isAllergic;
+      const isRestartHere  = isNewCat && plan.isRestart;
+
+      let extraStyle = 'padding:8px;margin:5px 0;font-size:13px';
+      if(isAllergicHere) extraStyle += ';background:#fee2e2;border-left:3px solid #dc2626';
+      else if(isRestartHere) extraStyle += ';background:#fef3c7;border-left:3px solid #f59e0b';
+
+      html+='<div class="food-item '+CC[cat]+'" style="'+extraStyle+'">';
+      html+='<b>'+plan[cat].name+'</b> ('+CN[cat]+')';
+      if(isAllergicHere)      html+=' <span class="allergic-tag">過敏</span>';
+      else if(isRestartHere)  html+=' <span class="restart-tag">再試</span>';
+      else if(isNewCat)       html+=' <span class="new-tag">新</span>';
+
+      html+='<br><span style="font-size:12px">🍽️ '+mi.meals+' · 份量: '+mi.portion+' · 質地: '+mi.texture+'</span>';
+
+      if(!isNewCat){
+        const sameDone=foodList.filter(ff=>ff.cat===cat
+          && ((foodStatus[ff.id]||{}).status==='completed'||(foodStatus[ff.id]||{}).actualDate)
+          && (foodStatus[ff.id]||{}).status!=='allergic');
+        if(sameDone.length>1){
+          const curKey=ds+'_'+cat;
+          html+='<br><span style="font-size:11px;color:#666">替換為: </span>';
+          html+='<select style="font-size:11px;padding:2px" onchange="swapFood(\''+ds+'\',\''+cat+'\',this.value)">';
+          sameDone.forEach(ff=>{
+            html+='<option value="'+ff.id+'"'+(ff.id===plan[cat].id?' selected':'')+'>'+ff.name+'</option>';
+          });
+          html+='</select>';
+          if(dailyOverride[curKey]){
+            html+=' <button class="btn btn-sm btn-gray" onclick="swapFood(\''+ds+'\',\''+cat+'\',\'\')">還原系統建議</button>';
+          }
+        }
+      }
+      html+='</div>';
+    }
+  });
+
+  html+='<h4 style="color:#059669;margin:15px 0 6px">✅ 實際進食記錄</h4>';
+  html+='<div style="font-size:12px;color:#666;margin-bottom:6px">勾選寶寶今日真係有食嘅食材（可單獨勾）</div>';
+  let hasAny=false;
+  ['grain','veg','fruit','meat'].forEach(cat=>{
+    if(plan[cat]){
+      hasAny=true;
+      const eaten = (actualEaten[ds]||{})[cat] || false;
+      html+='<label class="eaten-check-row">';
+      html+='<input type="checkbox" '+(eaten?'checked':'')+
+            ' onchange="toggleEaten(\''+ds+'\',\''+cat+'\',this.checked)">';
+      html+='<span><b>'+plan[cat].name+'</b> <span style="color:#666">('+CN[cat]+')</span></span>';
+      if(eaten) html+='<span class="eaten-tag" style="margin-left:auto">✓食</span>';
+      html+='</label>';
+    }
+  });
+  if(!hasAny) html+='<div style="font-size:12px;color:#999">本日無安排食材</div>';
+
+  document.getElementById('dayModalContent').innerHTML=html;
+  document.getElementById('dayModal').classList.add('show');
+}
+
+function toggleEaten(ds, cat, checked){
+  if(!actualEaten[ds]) actualEaten[ds] = {};
+  if(checked){
+    actualEaten[ds][cat] = true;
+  }else{
+    delete actualEaten[ds][cat];
+    if(Object.keys(actualEaten[ds]).length===0) delete actualEaten[ds];
+  }
+  saveState();
+  renderCalendar();
+  showDayModal(ds);
+}
+
+function closeModal(){document.getElementById('dayModal').classList.remove('show')}
+  
+function showPrintOptions(){
+  const pages=[['calendar','月曆'],['tracking','試敏記錄'],['manage','食材管理'],['guide','指引'],['settings','設定']];
+  const pageOpts=pages.map(([v,n])=>'<option value="'+v+'"'+(v===currentView?' selected':'')+'>'+n+'</option>').join('');
+  const months=[...monthSelect.options].map(o=>'<option value="'+o.value+'"'+(o.value===monthSelect.value?' selected':'')+'>'+o.textContent+'</option>').join('');
+  document.getElementById('dayModalContent').innerHTML=
+    '<h3>🖨️ 列印選項</h3>'+
+    '<div style="margin:12px 0"><label style="display:block;margin-bottom:4px;font-weight:bold">要列印的頁面</label>'+
+    '<select id="print-page" class="inp" onchange="document.getElementById(\'pm-wrap\').style.display=this.value===\'calendar\'?\'block\':\'none\'">'+pageOpts+'</select></div>'+
+    '<div id="pm-wrap" style="margin:12px 0;'+(currentView==='calendar'?'':'display:none')+'">'+
+      '<label style="display:block;margin-bottom:4px;font-weight:bold">月份</label>'+
+      '<select id="print-month" class="inp">'+months+'</select>'+
+      '<div style="font-size:12px;color:#666;margin-top:4px">月曆將以 A4 橫向單頁列印</div>'+
+    '</div>'+
+    '<div style="margin-top:15px;display:flex;gap:8px">'+
+      '<button class="btn" onclick="doPrint()">開始列印</button>'+
+      '<button class="btn btn-gray" onclick="closeModal()">取消</button>'+
+    '</div>';
+  document.getElementById('dayModal').classList.add('show');
+}
+function doPrint(){
+  const page=document.getElementById('print-page').value;
+  if(page==='calendar'){
+    monthSelect.value=document.getElementById('print-month').value;
+    renderCalendar();
+  }
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  const order=['calendar','tracking','manage','guide','settings'];
+  const tabs=document.querySelectorAll('.tab');
+  const idx=order.indexOf(page);
+  if(tabs[idx]) tabs[idx].classList.add('active');
+  document.getElementById(page+'-view').classList.add('active');
+  currentView=page;
+  closeModal();
+  setTimeout(()=>window.print(),250);
+}
+function markNewFood(id,ds,markDone){
+  id=parseInt(id);
+  if(!foodStatus[id])foodStatus[id]={status:'pending',actualDate:'',reaction:'',note:''};
+  foodStatus[id].actualDate=markDone?ds:'';
+  foodStatus[id].status=markDone?'completed':'pending';
+  regenerateAll();
+  showDayModal(ds);
+}
+function swapFood(ds,cat,foodId){
+  const key=ds+'_'+cat;
+  if(!foodId) delete dailyOverride[key];
+  else        dailyOverride[key]=parseInt(foodId);
+  saveState();
+  renderCalendar();
+  showDayModal(ds);
+}
+function markRestartSuccess(id, ds){
+  const st = foodStatus[id];
+  if(!st) return;
+  
+  preserveAllergyHistory(st);
+  
+  st.status = 'completed';
+  st.actualDate = ds;
+  st.restartDate = '';
+  st.reaction = '';
+  
+  regenerateAll();
+  closeModal();
+}
+
+  
+function filterTracking(e,cat){
+  trackingFilter=cat;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  renderTracking();
+}
+
+function renderTracking(){
+  const tbody=document.getElementById('tracking-tbody');
+  tbody.innerHTML='';
+foodList.forEach((f,i)=>{
+  if(trackingFilter!=='all'&&f.cat!==trackingFilter)return;
+  const s=foodStatus[f.id]||{status:'pending',actualDate:'',reaction:'',note:''};
+  const tr=document.createElement('tr');
+  if(s.status==='completed'||s.actualDate)tr.style.background='#ecfdf5';
+  if(s.status==='allergic')tr.style.background='#fef2f2';
+  
+  let historyHtml = '';
+  if(s.allergyHistory && s.allergyHistory.length>0){
+    historyHtml = '<div style="margin-top:4px">';
+    s.allergyHistory.forEach(h=>{
+      historyHtml += '<div class="allergy-history-cell" title="'+(h.reaction||'')+'">📛 '+h.date+(h.reaction?' ('+h.reaction+')':'')+'</div> ';
+    });
+    historyHtml += '</div>';
+  }
+  
+  tr.innerHTML='<td>'+(i+1)+'</td>'+
+    '<td><b>'+f.name+'</b>'+historyHtml+'</td>'+
+    '<td><span class="cat-badge '+CC[f.cat]+'">'+CN[f.cat]+'</span></td>'+
+    '<td>'+(foodSchedule[f.id]||'-')+'</td>'+
+    '<td><input type="date" class="inp" value="'+s.actualDate+'" onchange="updT('+f.id+',\'actualDate\',this.value)"></td>'+
+    '<td><select class="inp" onchange="updT('+f.id+',\'status\',this.value)">'+
+      '<option value="pending"'+(s.status==='pending'?' selected':'')+'>未試</option>'+
+      '<option value="completed"'+(s.status==='completed'?' selected':'')+'>已完成</option>'+
+    '<option value="allergic"'+(s.status==='allergic'?' selected':'')+'>過敏停用</option>'+
+  '</select></td>'+
+  '<td>'+(s.status==='allergic'
+      ? '<input type="date" class="inp" value="'+(s.restartDate||'')+'" onchange="updT('+f.id+',\'restartDate\',this.value)" title="再次開始測試日期">'
+      : '<span style="color:#aaa">-</span>')+'</td>'+
+  '<td><input type="text" class="inp" placeholder="無/紅疹/肚瀉等" value="'+(s.reaction||'')+'" onchange="updT('+f.id+',\'reaction\',this.value)"></td>'+
+  '<td><input type="text" class="inp" placeholder="備註" value="'+(s.note||'')+'" onchange="updT('+f.id+',\'note\',this.value)"></td>';
+    tbody.appendChild(tr);
+  });
+  const all=foodList.length;
+  const done=foodList.filter(f=>(foodStatus[f.id]||{}).status==='completed'||(foodStatus[f.id]||{}).actualDate).length;
+  const allergic=foodList.filter(f=>(foodStatus[f.id]||{}).status==='allergic').length;
+  document.getElementById('stats').innerHTML=
+    '<div class="stat-box"><div class="stat-num">'+all+'</div><div class="stat-label">總食材數</div></div>'+
+    '<div class="stat-box"><div class="stat-num">'+done+'</div><div class="stat-label">已完成</div></div>'+
+    '<div class="stat-box"><div class="stat-num">'+allergic+'</div><div class="stat-label">過敏停用</div></div>'+
+    '<div class="stat-box"><div class="stat-num">'+(all-done-allergic)+'</div><div class="stat-label">待試食材</div></div>'+
+    '<div class="stat-box"><div class="stat-num">'+Math.round(done/all*100)+'%</div><div class="stat-label">進度</div></div>';
+}
+
+
+// ✅ Bug 2 修正: status 改做 allergic 時自動填實際試食日
+function updT(id, field, val){
+if(!foodStatus[id]) foodStatus[id]={status:'pending',actualDate:'',reaction:'',note:''};
+const st = foodStatus[id];
+
+const isAllergicNow = st.status === 'allergic';
+const willLoseRecord =
+(field==='status' && isAllergicNow && val !== 'allergic')
+|| (field==='actualDate' && isAllergicNow && val !== st.actualDate)
+|| (field==='reaction' && isAllergicNow && val !== st.reaction)
+|| (field==='restartDate' && isAllergicNow && val !== st.restartDate);
+
+if(willLoseRecord){
+preserveAllergyHistory(st);
+}
+
+st[field] = val;
+
+// ✅ Bug 2 核心: 狀態改為過敏停用，自動填實際試食日
+if(field==='status' && val==='allergic'){
+if(!st.actualDate){
+// 優先用原本計劃嗰日；如果無就用今日
+const planned = foodSchedule[id];
+const todayStr = formatDate(new Date());
+st.actualDate = planned || todayStr;
+}
+}
+
+// ✅ 狀態改為已完成，如果未填實際試食日，自動填
+if(field==='status' && val==='completed'){
+st.restartDate = '';
+if(!st.actualDate){
+st.actualDate = foodSchedule[id] || formatDate(new Date());
+}
+}
+
+if(field==='status' && val==='pending'){
+st.actualDate = '';
+st.reaction = '';
+st.restartDate = '';
+}
+
+regenerateAll();
+renderTracking();
+}
+
+function renderManage(){
+  const c=document.getElementById('food-manage-list');
+  c.innerHTML='';
+  foodList.forEach((f,i)=>{
+    if(manageFilter!=='all' && f.cat!==manageFilter) return;
+    const s=foodStatus[f.id]||{};
+    const row=document.createElement('div');
+    row.className='food-row';
+    row.draggable=true;
+    row.dataset.id=f.id;
+    row.ondragstart=(e)=>{ e.dataTransfer.setData('text/plain',f.id); row.style.opacity='0.4'; };
+    row.ondragend  =()=>{ row.style.opacity='1'; };
+    row.ondragover =(e)=>{ e.preventDefault(); row.style.outline='2px dashed #3b82f6'; };
+    row.ondragleave=()=>{ row.style.outline=''; };
+    row.ondrop     =(e)=>{
+      e.preventDefault(); row.style.outline='';
+      const fromId=parseInt(e.dataTransfer.getData('text/plain'));
+      const toId=f.id;
+      if(fromId===toId) return;
+      const fromIdx=foodList.findIndex(x=>x.id===fromId);
+      const toIdx  =foodList.findIndex(x=>x.id===toId);
+      const item=foodList.splice(fromIdx,1)[0];
+      foodList.splice(toIdx,0,item);
+      regenerateAll();
+    };
+    if(s.status==='completed'||s.actualDate) row.classList.add('status-completed');
+    if(s.status==='allergic') row.classList.add('status-allergic');
+    row.innerHTML='<span class="idx" style="cursor:grab" title="拖拉排序">☰ '+(i+1)+'.</span>'+
+      '<input type="text" class="name-inp" value="'+f.name+'" onchange="updF('+f.id+',\'name\',this.value)">'+
+      '<select onchange="updF('+f.id+',\'cat\',this.value)">'+
+        '<option value="grain"'+(f.cat==='grain'?' selected':'')+'>穀物</option>'+
+        '<option value="veg"'+(f.cat==='veg'?' selected':'')+'>瓜菜</option>'+
+        '<option value="fruit"'+(f.cat==='fruit'?' selected':'')+'>水果</option>'+
+        '<option value="meat"'+(f.cat==='meat'?' selected':'')+'>肉類</option>'+
+      '</select>'+
+      '<button class="btn btn-sm btn-gray" onclick="moveF('+i+',-1)" '+(i===0?'disabled':'')+'>▲</button>'+
+      '<button class="btn btn-sm btn-gray" onclick="moveF('+i+',1)" '+(i===foodList.length-1?'disabled':'')+'>▼</button>'+
+      '<button class="btn btn-sm btn-red" onclick="delF('+i+')">✕</button>'+
+      '<span style="font-size:11px;color:#666;width:100%">計劃日: '+(foodSchedule[f.id]||'-')+(s.actualDate?' | 實際: '+s.actualDate:'')+(s.status==='allergic'?' | ⚠️ 過敏停用':'')+(s.allergyHistory&&s.allergyHistory.length>0?' | 📛 過敏歷史: '+s.allergyHistory.length+' 次':'')+'</span>';
+    c.appendChild(row);
+  });
+}
+
+function setManageFilter(e,cat){
+  manageFilter=cat;
+  document.querySelectorAll('#manage-view .filter-btn').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  renderManage();
+}
+  
+function updF(id,field,value){
+  const f=foodList.find(x=>x.id===id);
+  if(f){f[field]=value;regenerateAll();}
+}
+
+function moveF(i,dir){
+  const j=i+dir;
+  if(j<0||j>=foodList.length)return;
+  [foodList[i],foodList[j]]=[foodList[j],foodList[i]];
+  regenerateAll();
+}
+
+function delF(i){
+  if(!confirm('確定刪除 '+foodList[i].name+' ？'))return;
+  const id=foodList[i].id;
+  foodList.splice(i,1);
+  delete foodStatus[id];
+  regenerateAll();
+}
+
+function addFood(){
+  const n=document.getElementById('new-food-name').value.trim();
+  const c=document.getElementById('new-food-cat').value;
+  if(!n){alert('請輸入食材名稱');return;}
+  const id=nextId++;
+  foodList.push({id,name:n,cat:c});
+  foodStatus[id]={status:'pending',actualDate:'',reaction:'',note:''};
+  document.getElementById('new-food-name').value='';
+  regenerateAll();
+}
+
+function applyBabyName(){
+  document.querySelector('h1').innerHTML='🍼 '+babySettings.name+'食物計劃表 🥕';
+}
+function loadSettingsUI(){
+  const n=document.getElementById('set-name');
+  if(!n) return;
+  n.value=babySettings.name;
+  document.getElementById('set-birth').value=babySettings.birthDate;
+  document.getElementById('set-start').value=babySettings.startDate;
+  updateAgeDisplay();
+}
+function updateAgeDisplay(){
+  const b=document.getElementById('set-birth');
+  const disp=document.getElementById('age-display');
+  if(!b||!disp) return;
+  if(b.value){
+    const age=(new Date()-new Date(b.value+'T00:00:00'))/(86400000*30.4375);
+    disp.textContent='目前月齡約 '+age.toFixed(1)+' 個月';
+  }else disp.textContent='';
+}
+function saveSettings(){
+  babySettings.name      = document.getElementById('set-name').value.trim()||'寶寶';
+  babySettings.birthDate = document.getElementById('set-birth').value;
+  babySettings.startDate = document.getElementById('set-start').value||'2026-05-01';
+  START = new Date(babySettings.startDate+'T00:00:00');
+  applyBabyName();
+  regenerateAll();
+  alert('✅ 設定已儲存');
+}
+  
+  function regenerateAll(){
+  regenerateSchedule();
+  rebuildMonthSelect();
+  renderCalendar();
+  renderTracking();
+  renderManage();
+  saveState();
+}
+
+function switchView(e,v){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById(v+'-view').classList.add('active');
+  currentView=v;
+  if(v==='settings') loadSettingsUI();
+}
+
+// ✅ Bug 1 修正: exportToExcel 匯出全部設定（寶寶設定、每日替換、實際進食）
+function exportToExcel(){
+  const wb=XLSX.utils.book_new();
+  const wd=['日','一','二','三','四','五','六'];
+  
+  // Sheet 1: 每日食物計劃
+  const p=[['日期','星期','寶寶月齡','紅色假期','穀物','瓜菜','水果','肉類/蛋白質','新試敏','餐數(穀/瓜/果/肉)','份量(穀/瓜/果/肉)','質地(穀/瓜/果/肉)']];
+  let d=new Date(START);
+  const endD=getMaxDate();
+  while(d<=endD){
+    const ds=formatDate(d);
+    const plan=getDailyPlan(ds);
+    const miArr=['grain','veg','fruit','meat'].map(c=>plan[c]?getMealInfo(plan.age,c):null);
+    p.push([
+      ds,wd[d.getDay()],plan.age.toFixed(1)+'個月',
+      RED.has(ds)?('🔴 '+(HN[ds]||'')):'',
+      plan.grain?plan.grain.name:'',
+      plan.veg?plan.veg.name:'',
+      plan.fruit?plan.fruit.name:'',
+      plan.meat?plan.meat.name:'',
+      plan.isNew?('🆕 '+plan.isNew.name):'',
+      miArr.map(m=>m?m.meals:'').join(' | '),
+      miArr.map(m=>m?m.portion:'').join(' | '),
+      miArr.map(m=>m?m.texture:'').join(' | ')
+    ]);
+    d.setDate(d.getDate()+1);
+  }
+  const ws1=XLSX.utils.aoa_to_sheet(p);
+  ws1['!cols']=[{wch:12},{wch:6},{wch:10},{wch:15},{wch:14},{wch:14},{wch:14},{wch:14},{wch:16},{wch:25},{wch:30},{wch:25}];
+  XLSX.utils.book_append_sheet(wb,ws1,'每日食物計劃');
+  
+  // Sheet 2: 試敏記錄表
+  const t=[['編號','食材','類別','計劃試食日','實際試食日','狀態','再試日','過敏反應','備註','過敏歷史']];
+  foodList.forEach((f,i)=>{
+    const s=foodStatus[f.id]||{};
+    const historyStr = (s.allergyHistory && s.allergyHistory.length>0)
+      ? s.allergyHistory.map(h=>h.date+(h.reaction?'('+h.reaction+')':'')).join('; ')
+      : '';
+    t.push([
+      i+1,
+      f.name,
+      CN[f.cat],
+      foodSchedule[f.id]||'',
+      s.actualDate||'',
+      s.status==='completed'?'已完成':(s.status==='allergic'?'過敏停用':'未試'),
+      s.restartDate||'',
+      s.reaction||'',
+      s.note||'',
+      historyStr
+    ]);
+  });
+  const ws2=XLSX.utils.aoa_to_sheet(t);
+  ws2['!cols']=[{wch:6},{wch:18},{wch:14},{wch:12},{wch:12},{wch:10},{wch:12},{wch:20},{wch:25},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws2,'試敏記錄表');
+  
+  // ✅ Sheet 3: 系統設定（寶寶資料）
+  const settingsData = [
+    ['項目','值','說明'],
+    ['寶寶名字', babySettings.name||'', '顯示於標題'],
+    ['出生日期', babySettings.birthDate||'', '格式 YYYY-MM-DD'],
+    ['試敏開始日期', babySettings.startDate||'', '格式 YYYY-MM-DD']
+  ];
+  const wsSet = XLSX.utils.aoa_to_sheet(settingsData);
+  wsSet['!cols'] = [{wch:20},{wch:20},{wch:25}];
+  XLSX.utils.book_append_sheet(wb, wsSet, '系統設定');
+  
+  // ✅ Sheet 4: 每日食材替換
+  const overrideData = [['日期','類別','食材ID','食材名稱']];
+  Object.keys(dailyOverride).sort().forEach(key=>{
+    const parts = key.split('_');
+    const date = parts[0];
+    const cat  = parts[1];
+    const fid  = dailyOverride[key];
+    const f = foodList.find(x=>x.id===fid);
+    overrideData.push([date, cat, fid, f?f.name:'(不存在)']);
+  });
+  const wsOv = XLSX.utils.aoa_to_sheet(overrideData);
+  wsOv['!cols'] = [{wch:12},{wch:10},{wch:8},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, wsOv, '每日替換');
+  
+  // ✅ Sheet 5: 實際進食勾選
+  const eatenData = [['日期','穀物','瓜菜','水果','肉類/蛋白質']];
+  Object.keys(actualEaten).sort().forEach(date=>{
+    const e = actualEaten[date]||{};
+    eatenData.push([
+      date,
+      e.grain?'✓':'',
+      e.veg?'✓':'',
+      e.fruit?'✓':'',
+      e.meat?'✓':''
+    ]);
+  });
+  const wsEat = XLSX.utils.aoa_to_sheet(eatenData);
+  wsEat['!cols'] = [{wch:12},{wch:8},{wch:8},{wch:8},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, wsEat, '實際進食');
+  
+  // Sheet 6: 指引
+  const g=[
+    ['寶寶食物計劃指引'],[''],
+    ['基本原則'],
+    ['1. 每種新食物連續試 2-4 天 (本系統 3 天)'],
+    ['2. 避開紅色假期'],
+    ['3. 留意過敏反應'],
+    ['4. 一歲以下避免: 鹽、調味料、蜜糖'],
+    [''],
+    ['匯入說明 (完整還原)'],
+    ['本檔案內以下工作表匯入時會一併還原:'],
+    ['• 試敏記錄表: 食材、狀態、實際試食日、再試日、過敏歷史'],
+    ['• 系統設定: 寶寶名字、出生日期、試敏開始日期'],
+    ['• 每日替換: 月曆上手動調整嘅替換食材'],
+    ['• 實際進食: 月曆上勾選咗嘅實際進食記錄']
+  ];
+  const ws3=XLSX.utils.aoa_to_sheet(g);
+  ws3['!cols']=[{wch:60}];
+  XLSX.utils.book_append_sheet(wb,ws3,'指引');
+  
+  // Sheet 7: 備份資訊
+  const backupTime = new Date().toISOString();
+  const b=[
+    ['項目','值'],
+    ['備份時間', backupTime],
+    ['備份時間(可讀)', new Date().toLocaleString('zh-HK')],
+    ['食材總數', foodList.length],
+    ['已完成', foodList.filter(f=>foodStatus[f.id]&&foodStatus[f.id].status==='completed').length],
+    ['過敏停用', foodList.filter(f=>foodStatus[f.id]&&foodStatus[f.id].status==='allergic').length],
+    ['未試', foodList.filter(f=>!foodStatus[f.id]||foodStatus[f.id].status==='pending'||!foodStatus[f.id].status).length],
+    ['每日替換數', Object.keys(dailyOverride).length],
+    ['實際進食日數', Object.keys(actualEaten).length]
+  ];
+  const ws4=XLSX.utils.aoa_to_sheet(b);
+  ws4['!cols']=[{wch:20},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws4,'備份資訊');
+  
+  XLSX.writeFile(wb,'寶寶食物計劃_'+formatDate(new Date())+'.xlsx');
+  
+  try{
+    localStorage.setItem('lastBackupTime', backupTime);
+    if(typeof updateBackupStatus==='function') updateBackupStatus();
+  }catch(e){}
+}
+
+function exportActualRecord(){
+  const wb=XLSX.utils.book_new();
+  const wd=['日','一','二','三','四','五','六'];
+  const data=[['日期','星期','寶寶月齡',
+    '穀物','實食穀物',
+    '瓜菜','實食瓜菜',
+    '水果','實食水果',
+    '肉類/蛋白質','實食肉類',
+    '新試敏食材','試敏結果','反應/備註','替換記錄','當日進食總數']];
+  const today=new Date(); today.setHours(23,59,59,0);
+  let d=new Date(START);
+  while(d<=today){
+    const ds=formatDate(d);
+    const plan=getDailyPlan(ds);
+    const eat = actualEaten[ds]||{};
+    let newName='',result='',note='';
+    if(plan.isNew){
+      const s=foodStatus[plan.isNew.id]||{};
+      newName=plan.isNew.name;
+      if(s.status==='completed'&&s.actualDate===ds) result='✓ 成功';
+      else if(s.status==='allergic'&&s.actualDate===ds) result='⚠️ 過敏';
+      else if(s.actualDate&&s.actualDate!==ds) result='已延後至 '+s.actualDate;
+      else result='未確認';
+      note=[s.reaction,s.note].filter(Boolean).join(' / ');
+    }
+    const ovList=['grain','veg','fruit','meat']
+      .filter(c=>dailyOverride[ds+'_'+c])
+      .map(c=>CN[c]+'→'+(foodList.find(x=>x.id===dailyOverride[ds+'_'+c])||{}).name).join('; ');
+    const eatenCount = ['grain','veg','fruit','meat'].filter(c=>eat[c]).length;
+    data.push([
+      ds,wd[d.getDay()],plan.age.toFixed(1)+'個月',
+      plan.grain?plan.grain.name:'',  eat.grain?'✓':'',
+      plan.veg?plan.veg.name:'',      eat.veg?'✓':'',
+      plan.fruit?plan.fruit.name:'',  eat.fruit?'✓':'',
+      plan.meat?plan.meat.name:'',    eat.meat?'✓':'',
+      newName,result,note,ovList,
+      eatenCount+'/'+['grain','veg','fruit','meat'].filter(c=>plan[c]).length
+    ]);
+    d.setDate(d.getDate()+1);
+  }
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:12},{wch:6},{wch:10},
+    {wch:14},{wch:8},{wch:14},{wch:8},{wch:14},{wch:8},{wch:14},{wch:8},
+    {wch:16},{wch:14},{wch:22},{wch:22},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'實際進食紀錄');
+  XLSX.writeFile(wb,(babySettings.name||'寶寶')+'實際進食紀錄.xlsx');
+}
+
+// ✅ Bug 1 修正: handleImport 讀取全部設定
+function handleImport(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+      if(!wb.Sheets['試敏記錄表']){
+        alert('❌ Excel 中找不到「試敏記錄表」工作表');
+        return;
+      }
+      
+      // ---- 1) 試敏記錄表 ----
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets['試敏記錄表'],{header:1,raw:false,dateNF:'yyyy-mm-dd'});
+      
+      const header = rows[0] || [];
+      const hasRestartCol = header.some(h => String(h||'').trim()==='再試日');
+      const hasHistoryCol = header.some(h => String(h||'').trim()==='過敏歷史');
+      
+      const newList=[];
+      const newStatus={};
+      let id=1;
+      
+      const idxActual   = 4;
+      const idxStatus   = 5;
+      const idxRestart  = hasRestartCol ? 6 : -1;
+      const idxReaction = hasRestartCol ? 7 : 6;
+      const idxNote     = hasRestartCol ? 8 : 7;
+      const idxHistory  = hasHistoryCol ? (hasRestartCol ? 9 : 8) : -1;
+      
+      for(let i=1;i<rows.length;i++){
+        const r=rows[i];
+        if(!r||!r[1]||String(r[1]).trim()==='')continue;
+        const catName=String(r[2]||'').trim();
+        let cat='grain';
+        for(const k in CN){if(CN[k]===catName){cat=k;break;}}
+        newList.push({id,name:String(r[1]).trim(),cat});
+        
+        let status='pending';
+        const statusStr=String(r[idxStatus]||'').trim();
+        if(statusStr==='已完成'||statusStr==='✓')status='completed';
+        else if(statusStr==='過敏停用'||statusStr.includes('過敏'))status='allergic';
+        
+        let ad=r[idxActual]||'';
+        if(ad instanceof Date)ad=formatDate(ad);
+        ad=String(ad).trim();
+        if(ad&&ad.match(/^\d{4}-\d{2}-\d{2}/))ad=ad.substring(0,10);
+        else if(!ad.match(/^\d{4}-\d{2}-\d{2}$/))ad='';
+        if(ad&&status==='pending')status='completed';
+        
+        let rd = '';
+        if(idxRestart >= 0){
+          rd = r[idxRestart] || '';
+          if(rd instanceof Date) rd = formatDate(rd);
+          rd = String(rd).trim();
+          if(rd && rd.match(/^\d{4}-\d{2}-\d{2}/)) rd = rd.substring(0,10);
+          else if(!rd.match(/^\d{4}-\d{2}-\d{2}$/)) rd = '';
+        }
+        
+        let allergyHistory = [];
+        if(idxHistory >= 0){
+          const histStr = String(r[idxHistory]||'').trim();
+          if(histStr){
+            allergyHistory = histStr.split(';').map(s=>{
+              s = s.trim();
+              if(!s) return null;
+              const m = s.match(/^(\d{4}-\d{2}-\d{2})(?:\s*\((.*)\))?$/);
+              if(m) return {date: m[1], reaction: (m[2]||'').trim()};
+              return null;
+            }).filter(Boolean);
+          }
+        }
+        
+        newStatus[id]={
+          status,
+          actualDate: ad,
+          restartDate: rd,
+          reaction: String(r[idxReaction]||''),
+          note: String(r[idxNote]||''),
+          allergyHistory: allergyHistory
+        };
+        id++;
+      }
+      if(newList.length===0){alert('❌ 試敏記錄表沒有有效資料');return;}
+      
+      // ---- 2) 系統設定 ----
+      let settingsLoaded = false;
+      if(wb.Sheets['系統設定']){
+        const sRows = XLSX.utils.sheet_to_json(wb.Sheets['系統設定'], {header:1, raw:false, dateNF:'yyyy-mm-dd'});
+        for(let i=1;i<sRows.length;i++){
+          const r = sRows[i];
+          if(!r || !r[0]) continue;
+          const key = String(r[0]).trim();
+          let v = r[1];
+          if(v instanceof Date) v = formatDate(v);
+          v = String(v==null?'':v).trim();
+          if(key==='寶寶名字' && v) babySettings.name = v;
+          else if(key==='出生日期'){
+            if(v && v.match(/^\d{4}-\d{2}-\d{2}/)) babySettings.birthDate = v.substring(0,10);
+            else if(!v) babySettings.birthDate = '';
+          }
+          else if(key==='試敏開始日期' && v && v.match(/^\d{4}-\d{2}-\d{2}/)){
+            babySettings.startDate = v.substring(0,10);
+            START = new Date(babySettings.startDate+'T00:00:00');
+          }
+        }
+        settingsLoaded = true;
+      }
+      
+      // ---- 3) 每日替換 ----
+      let newOverride = {};
+      let overrideLoaded = false;
+      if(wb.Sheets['每日替換']){
+        const oRows = XLSX.utils.sheet_to_json(wb.Sheets['每日替換'], {header:1, raw:false, dateNF:'yyyy-mm-dd'});
+        for(let i=1;i<oRows.length;i++){
+          const r = oRows[i];
+          if(!r || !r[0]) continue;
+          let date = r[0];
+          if(date instanceof Date) date = formatDate(date);
+          date = String(date).trim();
+          if(date.match(/^\d{4}-\d{2}-\d{2}/)) date = date.substring(0,10);
+          const cat = String(r[1]||'').trim();
+          const fid = parseInt(r[2]);
+          if(date && cat && fid && !isNaN(fid)){
+            // 驗證 food id 仍存在
+            if(newList.some(f=>f.id===fid)){
+              newOverride[date+'_'+cat] = fid;
+            }
+          }
+        }
+        overrideLoaded = true;
+      }
+      
+      // ---- 4) 實際進食 ----
+      let newEaten = {};
+      let eatenLoaded = false;
+      if(wb.Sheets['實際進食']){
+        const eRows = XLSX.utils.sheet_to_json(wb.Sheets['實際進食'], {header:1, raw:false, dateNF:'yyyy-mm-dd'});
+        for(let i=1;i<eRows.length;i++){
+          const r = eRows[i];
+          if(!r || !r[0]) continue;
+          let date = r[0];
+          if(date instanceof Date) date = formatDate(date);
+          date = String(date).trim();
+          if(date.match(/^\d{4}-\d{2}-\d{2}/)) date = date.substring(0,10);
+          if(!date.match(/^\d{4}-\d{2}-\d{2}$/)) continue;
+          const rec = {};
+          if(String(r[1]||'').trim()) rec.grain = true;
+          if(String(r[2]||'').trim()) rec.veg = true;
+          if(String(r[3]||'').trim()) rec.fruit = true;
+          if(String(r[4]||'').trim()) rec.meat = true;
+          if(Object.keys(rec).length) newEaten[date] = rec;
+        }
+        eatenLoaded = true;
+      }
+      
+      // ---- 套用 ----
+      foodList=newList;
+      foodStatus=newStatus;
+      nextId=id;
+      dailyOverride = newOverride;
+      actualEaten = newEaten;
+      
+      applyBabyName();
+      loadSettingsUI();
+      regenerateAll();
+      
+      alert('✅ 匯入成功！\n'+
+            '• 食材 '+newList.length+' 項\n'+
+            (hasRestartCol?'• ✓ 再試日':'• ⚠ 舊格式無再試日')+'\n'+
+            (hasHistoryCol?'• ✓ 過敏歷史':'• ⚠ 舊格式無過敏歷史')+'\n'+
+            (settingsLoaded?'• ✓ 寶寶設定':'• ⚠ 無系統設定工作表')+'\n'+
+            (overrideLoaded?'• ✓ 每日替換 '+Object.keys(newOverride).length+' 項':'• ⚠ 無每日替換工作表')+'\n'+
+            (eatenLoaded?'• ✓ 實際進食 '+Object.keys(newEaten).length+' 日':'• ⚠ 無實際進食工作表'));
+    }catch(err){
+      alert('❌ 匯入失敗: '+err.message);
+    }
+    e.target.value='';
+  };
+  reader.readAsArrayBuffer(file);
+}
+  
+function updateBackupStatus(){
+  const el = document.getElementById('backupStatus');
+  if(!el) return;
+  let last = null;
+  try{ last = localStorage.getItem('lastBackupTime'); }catch(e){}
+  
+  if(!last){
+    el.innerHTML = '⚠️ 未曾備份，建議匯出 Excel 保存';
+    el.style.color = '#d97706';
+    return;
+  }
+  const lastDate = new Date(last);
+  const days = Math.floor((Date.now()-lastDate.getTime())/86400000);
+  const dateStr = lastDate.toLocaleDateString('zh-HK');
+  
+  if(days >= 7){
+    el.innerHTML = `⚠️ 已 ${days} 日未備份（上次：${dateStr}），建議匯出`;
+    el.style.color = '#d97706';
+  } else if(days >= 3){
+    el.innerHTML = `📋 上次備份：${dateStr}（${days} 日前）`;
+    el.style.color = '#6b7280';
+  } else {
+    el.innerHTML = `✅ 上次備份：${dateStr}（${days===0?'今日':days+' 日前'}）`;
+    el.style.color = '#059669';
+  }
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', updateBackupStatus);
+} else {
+  setTimeout(updateBackupStatus, 100);
+}
+
+if(loadState()){
+  applyBabyName();
+  loadSettingsUI();
+  regenerateAll();
+}else{
+  resetDefault();
+  loadSettingsUI();
+}
+</script>
+  
+<footer style="
+  margin-top: 40px;
+  padding: 16px 12px;
+  border-top: 1px solid #ddd;
+  text-align: center;
+  font-size: 11px;
+  color: #666;
+  line-height: 1.5;
+  background-color: #fff7f0;
+">
+  <p style="margin:6px 0;">
+    只供參考用途，並非醫學建議。如有任何健康或過敏疑問，請向醫生查詢。本應用程式只作私人用途。
+  </p>
+  <p style="margin-top:10px;font-size:10px;color:#999;">
+    © <span id="footer-year"></span> Samantha. All rights reserved.
+  </p>
+</footer>
+
+</body>
+</html>
