@@ -1535,6 +1535,12 @@ if(loadState()){
   resetDefault();
   loadSettingsUI();
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+  switchView({ target: document.querySelector('.tab:last-child') }, 'settings');
+});
+
+  
 </script>
   
 <footer style="
